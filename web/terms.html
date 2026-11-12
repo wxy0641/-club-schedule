@@ -1,0 +1,63 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self'; connect-src 'self'; img-src 'self' data:; base-uri 'none'; form-action 'self'">
+  <meta name="referrer" content="no-referrer">
+  <title>使用、隐私与共享条款 · 社团协同课表</title>
+  <meta name="description" content="社团协同课表的公开使用、隐私与日期状态共享条款；空间内具体告知需登录后查看。">
+  <link rel="stylesheet" href="./fonts/fonts.css">
+  <link rel="stylesheet" href="./styles.css">
+</head>
+<body>
+  <header class="top">
+    <div class="wrap top-inner">
+      <a class="brand" href="./index.html">
+        <span class="mark" aria-hidden="true"></span>
+        <div>
+          <h1>社团协同课表</h1>
+          <p class="sub">使用、隐私与共享条款</p>
+        </div>
+      </a>
+      <div class="top-actions">
+        <a id="terms-back" class="ghost small link-button back-link" href="./index.html">返回</a>
+      </div>
+    </div>
+  </header>
+
+  <main class="wrap">
+    <section class="card">
+      <div class="app-head">
+        <div>
+          <h2>使用、隐私与共享条款</h2>
+          <p class="hint">本页是公开说明。空间内的具体告知、当前版本和你的决定，需登录后在对应空间查看。</p>
+        </div>
+      </div>
+
+      <p id="terms-status" class="muted">正在读取条款…</p>
+      <div id="terms-content" hidden>
+        <h3>一般规则</h3>
+        <ul id="terms-general" class="terms-list"></ul>
+
+        <h3>加入空间告知</h3>
+        <div id="terms-join" class="terms-text"></div>
+
+        <h3>个人日历告知（必选）</h3>
+        <div id="terms-calendar" class="terms-text"></div>
+        <p class="note">这份告知用于具体日期例外与本人月历。拒绝后仍可查看课表和日历，但日期例外保持只读。</p>
+
+        <h3>日期状态共享（可选）</h3>
+        <div id="terms-share" class="terms-text"></div>
+        <p class="note">可选共享不是使用课表、日历或收集功能的前提；拒绝或撤回不影响账号与空间权限，也不会删除你的日期数据。撤回后，后续读取与新导出立即不再包含你的共享状态；已经下载或截图的文件无法收回。</p>
+
+        <h3>你的决定</h3>
+        <p class="note">同意、拒绝、撤回及其版本与时间都由服务端记录，不保存在浏览器本地。收起时“全部同意”只作用于当前待确认项；“仅必要项”会同意日历告知并拒绝可选共享。已经拒绝或撤回的项不会因一键同意自动恢复，需要展开逐项重新选择。登录后可在“我的空间”的“隐私设置”查看和重新决定。</p>
+      </div>
+      <noscript><p class="inline-error">需要启用 JavaScript 才能读取当前条款版本与正文。</p></noscript>
+    </section>
+  </main>
+
+  <script type="module" src="./terms.js"></script>
+</body>
+</html>

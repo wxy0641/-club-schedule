@@ -1,0 +1,869 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self'; connect-src 'self'; img-src 'self' data:; base-uri 'none'; form-action 'self'">
+  <meta name="referrer" content="no-referrer">
+  <title>社团协同课表</title>
+  <meta name="description" content="社团课表协同：填写周课表、设置教学周、查看本人月历与收集进度。">
+  <link rel="stylesheet" href="./fonts/fonts.css">
+  <link rel="stylesheet" href="./styles.css">
+</head>
+<body>
+  <header class="top">
+    <div class="wrap top-inner">
+      <a class="brand" id="brand-link" href="#/spaces">
+        <span class="mark" aria-hidden="true"></span>
+        <div>
+          <h1>社团协同课表</h1>
+          <p class="sub">周课表、收集与本人日历</p>
+        </div>
+      </a>
+      <div class="top-actions">
+        <span id="session-chip" class="chip chip-idle">正在读取会话…</span>
+        <div id="account-wrap" class="account-wrap" hidden>
+          <button id="account-button" type="button" class="account-button" aria-haspopup="menu" aria-expanded="false" aria-controls="account-panel" aria-label="账号与退出">
+            <span id="account-name" class="account-name"></span>
+            <span class="account-caret" aria-hidden="true">▾</span>
+          </button>
+          <div id="account-panel" class="account-panel" role="menu" aria-label="账号操作" hidden>
+            <button id="open-privacy" type="button" role="menuitem">隐私设置</button>
+            <button id="logout" type="button" role="menuitem" class="is-danger">退出登录</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <main class="wrap">
+    <section id="auth-panel" class="card" hidden>
+      <div class="auth-tabs" role="tablist" aria-label="账号入口">
+        <button id="auth-tab-login" type="button" class="tab" role="tab" aria-selected="true">登录</button>
+        <button id="auth-tab-register" type="button" class="tab" role="tab" aria-selected="false">注册</button>
+      </div>
+
+      <form id="login-form" class="form" novalidate>
+        <h2>登录</h2>
+        <label for="login-username">账号</label>
+        <input id="login-username" type="text" autocomplete="username" spellcheck="false" placeholder="3–32 位小写字母、数字、_ 或 -">
+        <label for="login-password">密码</label>
+        <input id="login-password" type="password" autocomplete="current-password" placeholder="输入密码">
+        <label class="check-line" for="login-terms">
+          <input id="login-terms" type="checkbox">
+          <span>我已阅读并同意<a href="./terms.html?from=login" target="_blank" rel="noopener">《使用、隐私与共享条款》</a>中的必要告知。</span>
+        </label>
+        <div class="actions">
+          <button id="login-submit" type="submit" disabled>登录</button>
+        </div>
+      </form>
+
+      <form id="register-form" class="form" hidden novalidate>
+        <h2>创建账号</h2>
+        <div class="notice-box" role="note">
+          <strong>忘记密码可能无法恢复</strong>
+          <p>本版本不提供短信/邮箱验证，也没有忘记密码或找回流程，请用密码管理器保存。注册只创建账号；空间内姓名在创建或加入空间时单独填写。</p>
+        </div>
+        <label for="register-username">账号</label>
+        <input id="register-username" type="text" autocomplete="username" spellcheck="false" placeholder="3–32 位小写字母、数字、_ 或 -" aria-describedby="register-username-note">
+        <p id="register-username-note" class="note">不能与其他账号重复。</p>
+        <p id="register-username-error" class="field-error" role="alert" hidden></p>
+        <label for="register-nickname">昵称</label>
+        <input id="register-nickname" type="text" maxlength="50" autocomplete="nickname" placeholder="例如：小满">
+        <p class="note">可重复，不必填写真实姓名。</p>
+        <label for="register-password">密码</label>
+        <input id="register-password" type="password" autocomplete="new-password" placeholder="支持密码管理器粘贴" aria-describedby="register-password-note">
+        <p id="register-password-note" class="note">至少 8 个字符。</p>
+        <p id="register-password-error" class="field-error" role="alert" hidden></p>
+        <label for="register-confirm">再次输入密码</label>
+        <input id="register-confirm" type="password" autocomplete="new-password" placeholder="再次输入同一密码" aria-describedby="register-confirm-error">
+        <p id="register-confirm-error" class="field-error" role="alert" hidden></p>
+        <label class="check-line" for="register-notice">
+          <input id="register-notice" type="checkbox">
+          <span>我已了解：忘记密码可能无法恢复，本版本没有找回流程。</span>
+        </label>
+        <div class="actions">
+          <button id="register-submit" type="submit" aria-label="注册并登录" disabled>注册</button>
+        </div>
+        <p class="note">注册前请阅读<a href="./terms.html?from=register">《使用、隐私与共享条款》</a>；加入空间时会单独展示该空间告知。</p>
+      </form>
+    </section>
+
+    <section id="app-panel" hidden>
+      <div class="shell">
+        <aside class="shell-side" aria-label="空间导航">
+          <a class="side-spaces-link" id="side-spaces-link" href="#/spaces" aria-label="返回我的空间"><span class="back-icon" aria-hidden="true">←</span>我的空间</a>
+          <div id="side-space" class="side-space" hidden>
+            <p id="side-space-name" class="side-space-name"></p>
+            <p id="side-space-role" class="side-space-role"></p>
+            <nav id="side-space-links" class="side-links" aria-label="空间功能"></nav>
+          </div>
+        </aside>
+
+        <div class="shell-main">
+          <div id="mobile-head" class="mobile-head">
+            <button id="mobile-back" type="button" class="mobile-back" aria-label="返回上一级"><span class="back-icon" aria-hidden="true">←</span></button>
+            <span id="mobile-title" class="mobile-title"></span>
+          </div>
+          <nav id="mobile-nav" class="mobile-nav" aria-label="空间功能" hidden></nav>
+          <p id="flash" class="flash" role="status" aria-live="polite" hidden></p>
+
+          <div id="space-head" class="space-head" hidden>
+            <div>
+              <h2 id="space-title"></h2>
+              <p id="space-role" class="sub"></p>
+            </div>
+            <span id="space-status" class="chip chip-idle" hidden></span>
+          </div>
+
+          <section id="page-spaces" class="page" hidden>
+            <div class="card">
+              <div class="app-head">
+                <div>
+                  <h2>我的空间</h2>
+                  <p id="spaces-summary" class="hint"></p>
+                </div>
+                <div class="actions compact">
+                  <button id="open-create" type="button">创建空间</button>
+                  <button id="open-join" type="button" class="ghost" aria-label="使用邀请码加入空间">加入空间</button>
+                  <button id="reload" type="button" class="ghost small" aria-label="重新读取空间列表">刷新</button>
+                </div>
+              </div>
+
+              <p id="spaces-loading" class="muted" hidden>正在读取空间…</p>
+              <div id="spaces-error" class="inline-error" hidden>
+                <span id="spaces-error-text"></span>
+                <button id="spaces-retry" type="button" class="ghost" aria-label="重新读取空间列表">重试</button>
+              </div>
+              <p id="spaces-empty" class="muted" hidden>还没有加入任何空间。可以创建一个新空间，或使用负责人给你的邀请码加入。</p>
+              <div id="space-list" class="space-list" role="list"></div>
+            </div>
+          </section>
+
+          <section id="page-create" class="page" hidden>
+            <div class="card">
+              <div class="app-head">
+                <div>
+                  <h2>创建空间</h2>
+                  <p class="hint">创建后你将成为负责人，并立即进入空间首页。</p>
+                </div>
+              </div>
+              <form id="create-form" class="form wide" novalidate>
+                <label for="create-name">空间名称</label>
+                <input id="create-name" type="text" maxlength="50" placeholder="例如：2026 秋季社团课表">
+
+                <label for="create-owner-name">你在空间内的姓名</label>
+                <input id="create-owner-name" type="text" maxlength="50" placeholder="成员会看到这个姓名">
+
+                <fieldset>
+                  <legend>收集模式</legend>
+                  <label class="check-line"><input type="radio" name="create-mode" value="presence" checked> <span>仅有课状态（有课／无课，不采集课程名）</span></label>
+                  <label class="check-line"><input type="radio" name="create-mode" value="courses"> <span>收集具体课程名</span></label>
+                </fieldset>
+
+                <fieldset>
+                  <legend>周次规则</legend>
+                  <p class="note">成员按日、节次填写，周次统一继承这里的选择；首次有效提交后固定。</p>
+                  <label class="check-line"><input type="radio" name="create-week-rule" value="every" checked> <span>每周</span></label>
+                  <label class="check-line"><input type="radio" name="create-week-rule" value="odd"> <span>单周</span></label>
+                  <label class="check-line"><input type="radio" name="create-week-rule" value="even"> <span>双周</span></label>
+                </fieldset>
+
+                <fieldset>
+                  <legend>教学周与学期</legend>
+                  <p class="note">用于计算教学周与本人月历；需显式选择，确认后不可更改。推荐 Asia/Shanghai，但不会自动替你选择。</p>
+                  <span id="create-timezone-label" class="field-label">时区</span>
+                  <div class="picker-field">
+                    <button id="create-timezone-button" type="button" class="picker-button" aria-haspopup="listbox" aria-expanded="false" aria-labelledby="create-timezone-label create-timezone-button">选择时区</button>
+                    <input id="create-timezone" type="hidden">
+                    <div id="create-timezone-panel" class="tz-panel" hidden>
+                      <label for="create-timezone-search">搜索时区</label>
+                      <input id="create-timezone-search" type="search" autocomplete="off" placeholder="输入 Asia 或 UTC">
+                      <ul id="create-timezone-list" class="tz-list" role="listbox" aria-label="可选时区"></ul>
+                      <p class="note">推荐 Asia/Shanghai；列表不会自动替你选中。</p>
+                    </div>
+                  </div>
+                  <span id="create-anchor-label" class="field-label">第一教学周周一</span>
+                  <div class="picker-field">
+                    <button id="create-anchor-button" type="button" class="picker-button" aria-haspopup="dialog" aria-labelledby="create-anchor-label create-anchor-button">选择日期</button>
+                    <input id="create-anchor" type="hidden">
+                  </div>
+                  <span id="create-term-start-label" class="field-label">学期开始日期</span>
+                  <div class="picker-field">
+                    <button id="create-term-start-button" type="button" class="picker-button" aria-haspopup="dialog" aria-labelledby="create-term-start-label create-term-start-button">选择日期</button>
+                    <input id="create-term-start" type="hidden">
+                  </div>
+                  <p class="note">学期开始须在第一教学周（周一至周日）内。</p>
+                  <span id="create-term-end-label" class="field-label">学期结束日期</span>
+                  <div class="picker-field">
+                    <button id="create-term-end-button" type="button" class="picker-button" aria-haspopup="dialog" aria-labelledby="create-term-end-label create-term-end-button">选择日期</button>
+                    <input id="create-term-end" type="hidden">
+                  </div>
+                  <p id="create-teaching-preview" class="hint" aria-live="polite">请填写完整的教学周设置。</p>
+                  <div class="notice-box" role="note">
+                    <strong>确认后不可更改</strong>
+                    <p>提交前请核对；确认后没有修改入口。</p>
+                  </div>
+                </fieldset>
+
+                <fieldset>
+                  <legend>每日节次与时间</legend>
+                  <p class="note">最多 20 节，可增删。</p>
+                  <div id="periods-editor" class="periods"></div>
+                  <div class="actions">
+                    <button id="add-period" type="button" class="ghost">增加一节</button>
+                    <button id="reset-periods" type="button" class="ghost" aria-label="恢复 12 节模板">恢复模板</button>
+                  </div>
+                </fieldset>
+
+                <fieldset>
+                  <legend>成员可见范围</legend>
+                  <label class="check-line"><input type="radio" name="create-visibility" value="stats" checked> <span>仅统计：成员只看到有课／无课／未知数量</span></label>
+                  <label class="check-line"><input type="radio" name="create-visibility" value="masked_list"> <span>脱敏名单：成员看到脱敏姓名与状态，不含他人课程名</span></label>
+                </fieldset>
+
+                <div class="actions">
+                  <button id="create-submit" type="submit" aria-label="保存并进入空间" disabled>保存空间</button>
+                  <a class="button-link ghost-link back-link" href="#/spaces" aria-label="返回我的空间">返回空间</a>
+                </div>
+                <p id="create-status" class="status" role="status" aria-live="polite"></p>
+              </form>
+            </div>
+          </section>
+
+          <section id="page-join" class="page" hidden>
+            <div class="card">
+              <div class="app-head">
+                <div>
+                  <h2>使用邀请码加入</h2>
+                  <p class="hint">邀请码由空间负责人生成；加入前请阅读告知。</p>
+                </div>
+              </div>
+              <form id="join-form" class="form" novalidate>
+                <label for="join-code">邀请码</label>
+                <input id="join-code" type="text" autocomplete="off" spellcheck="false" placeholder="粘贴或输入邀请码">
+                <label for="join-name">你在该空间内的姓名</label>
+                <input id="join-name" type="text" maxlength="50" placeholder="负责人会看到这个姓名">
+                <div id="join-notice-text" class="notice-box" role="note">
+                  <strong>加入前告知</strong>
+                  <p>负责人会看到你的空间内姓名；课程模式下还会看到你提交的课程名。普通成员看不到他人的课程名。暂不支持自行退出或角色转移。</p>
+                </div>
+                <label class="check-line" for="join-notice">
+                  <input id="join-notice" type="checkbox">
+                  <span>我已阅读并同意上述告知</span>
+                </label>
+                <div id="join-share-note" class="notice-box" role="note">
+                  <strong>日期状态共享（可选）</strong>
+                  <p id="join-share-text">确认后，负责人可以在收集日历中看到你在具体日期和节次的“忙/有空”声明；不确认时，负责人仍能看到你已提交课表的课程占用，但你的无课状态只会折叠在待确认，不会被标为有空。共享范围仅限本空间负责人，撤回不影响课表收集与账号权限。</p>
+                  <label class="check-line" for="join-share">
+                    <input id="join-share" type="checkbox">
+                    <span>我同意按上述范围共享日期层面的忙/有空状态</span>
+                  </label>
+                </div>
+                <div class="actions">
+                  <button id="join-submit" type="submit">加入空间</button>
+                  <a class="button-link ghost-link back-link" href="#/spaces" aria-label="返回我的空间">返回空间</a>
+                </div>
+                <p id="join-status" class="status" role="status" aria-live="polite"></p>
+              </form>
+            </div>
+          </section>
+
+          <section id="page-home" class="page" hidden>
+            <p id="home-loading" class="muted" hidden>正在读取空间首页…</p>
+            <div id="home-error" class="inline-error" hidden>
+              <span id="home-error-text"></span>
+              <button id="home-retry" type="button" class="ghost" aria-label="重新读取空间">重试</button>
+            </div>
+            <div id="home-content" hidden>
+              <div id="home-status-grid" class="status-grid"></div>
+              <div id="home-teaching-note" class="notice-box" role="note" hidden></div>
+              <div id="home-legacy" class="card small" hidden>
+                <h3>旧版空间</h3>
+                <p id="home-legacy-text" class="hint"></p>
+                <div class="actions">
+                  <button id="home-open-legacy" type="button" class="ghost">打开填报</button>
+                </div>
+              </div>
+            </div>
+          </section>
+
+          <section id="page-schedule" class="page" hidden>
+            <section id="schedule-panel" class="card">
+              <p id="schedule-teaching-note" class="notice-box" role="note" hidden></p>
+              <p id="schedule-loading" class="muted" hidden>正在读取课表…</p>
+              <div id="schedule-error" class="inline-error" hidden>
+                <span id="schedule-error-text"></span>
+                <button id="schedule-error-retry" type="button" class="ghost" aria-label="重新读取课表">刷新</button>
+              </div>
+              <div id="schedule-legacy-note" class="notice-box" role="note" hidden>
+                <strong>旧版空间</strong>
+                <p>该空间没有周课表配置，请使用旧版整表填报。</p>
+                <div class="actions">
+                  <button id="schedule-open-legacy" type="button" class="ghost">旧版填报</button>
+                </div>
+              </div>
+              <div id="schedule-view-bar" class="schedule-view-bar">
+                <div id="day-tabs-wrap" class="day-tabs-wrap">
+                  <div id="day-tabs" class="day-tabs" role="tablist" aria-label="按日查看课表"></div>
+                </div>
+              </div>
+              <div id="schedule-grid" class="schedule-grid"></div>
+
+              <section id="cell-editor" class="cell-editor" hidden role="dialog" aria-modal="false"
+                aria-labelledby="cell-title" tabindex="-1">
+                <div class="app-head">
+                  <h3 id="cell-title">编辑本格</h3>
+                  <button id="cell-cancel" type="button" class="cell-close" aria-label="关闭编辑，不保存">×</button>
+                </div>
+
+                <p id="cell-rule-note" class="note"></p>
+
+                <div id="cell-every-block" class="cell-rule-block">
+                  <div id="cell-every-course" class="course-field">
+                    <label id="cell-course-label" for="cell-every-name">课程名</label>
+                    <input id="cell-every-name" type="text" maxlength="100" placeholder="例如：高等数学">
+                  </div>
+                </div>
+
+                <p id="cell-hint" class="note"></p>
+                <div class="actions cell-actions-main">
+                  <button id="cell-previous" type="button" class="ghost" hidden>沿用上节</button>
+                  <span id="cell-previous-note" class="cell-previous-note" hidden></span>
+                  <button id="cell-clear" type="button" class="danger" hidden>删除内容</button>
+                  <button id="cell-apply" type="button">保存</button>
+                </div>
+              </section>
+              <button id="cell-editor-restore" type="button" class="cell-editor-restore" aria-label="继续编辑本格" hidden>继续编辑</button>
+
+              <div id="schedule-actions" class="actions">
+                <button id="schedule-save-draft" type="button" class="ghost" aria-label="保存草稿">保存草稿</button>
+                <button id="schedule-publish" type="button" aria-label="提交有效课表">提交课表</button>
+                <button id="schedule-discard" type="button" class="danger" aria-label="放弃本地修改" hidden>放弃修改</button>
+                <details id="schedule-more" class="more-menu">
+                  <summary class="ghost small">更多</summary>
+                  <div class="more-panel" role="menu" aria-label="课表工具">
+                    <button id="schedule-reload" type="button" role="menuitem" aria-label="重新读取课表">刷新课表</button>
+                    <button id="schedule-clear" type="button" role="menuitem" class="danger" aria-label="清空整周内容">清空整周</button>
+                  </div>
+                </details>
+              </div>
+              <p id="schedule-conflict" class="inline-error" role="alert" hidden>
+                <span id="schedule-conflict-text"></span>
+                <button id="schedule-conflict-reload" type="button" class="ghost">读取最新</button>
+              </p>
+              <div class="schedule-status-row">
+                <span id="schedule-state" class="chip chip-idle">正在读取…</span>
+                <p id="schedule-status" class="status" role="status" aria-live="polite"></p>
+              </div>
+
+            </section>
+          </section>
+
+          <section id="page-calendar" class="page" hidden>
+            <div class="card">
+              <div class="app-head">
+                <div>
+                  <h2>我的日历</h2>
+                </div>
+                <div class="app-head-actions">
+                  <button id="calendar-preview" type="button" class="ghost small" aria-pressed="false" hidden>草稿预览</button>
+                  <span id="calendar-state" class="chip chip-idle">正在读取…</span>
+                </div>
+              </div>
+
+              <p id="calendar-teaching-note" class="notice-box" role="note" hidden></p>
+              <p id="calendar-preview-note" class="note" role="note" hidden>以下为草稿内容，尚未提交；负责人看不到。</p>
+
+              <section id="calendar-assignments" class="assignment-panel" aria-labelledby="calendar-assignments-title" hidden>
+                <div class="assignment-head">
+                  <h3 id="calendar-assignments-title">待我确认与已接受</h3>
+                  <span id="calendar-assignment-count" class="chip chip-warn" hidden></span>
+                </div>
+                <p class="hint">确认后才会占用节次；课程不会被自动取消。</p>
+                <div id="calendar-assignment-list" class="assignment-list"></div>
+              </section>
+
+              <div id="calendar-toolbar" class="calendar-toolbar">
+                <button id="calendar-prev" type="button" class="ghost cal-nav" aria-label="上个月"><span aria-hidden="true">←</span></button>
+                <strong id="calendar-month" class="calendar-month" aria-live="polite"></strong>
+                <button id="calendar-next" type="button" class="ghost cal-nav" aria-label="下个月"><span aria-hidden="true">→</span></button>
+                <button id="calendar-today" type="button" class="ghost">今天</button>
+              </div>
+              <p id="calendar-switch-status" class="calendar-switch-status" role="status" aria-live="polite" hidden></p>
+              <p id="calendar-term" class="hint"></p>
+              <ul id="calendar-legend" class="legend" aria-label="状态图例"></ul>
+
+              <p id="calendar-loading" class="muted" hidden>正在读取月历…</p>
+              <div id="calendar-skeleton" class="calendar-skeleton" hidden aria-hidden="true">
+                <div class="calendar-skeleton-head"></div>
+                <div class="calendar-skeleton-grid"></div>
+              </div>
+              <div id="calendar-error" class="inline-error" hidden>
+                <span id="calendar-error-text"></span>
+                <button id="calendar-retry" type="button" class="ghost" aria-label="重新读取月历">重试</button>
+              </div>
+              <p id="calendar-empty" class="muted" hidden></p>
+
+              <div id="calendar-table" class="calendar-table" hidden>
+                <div class="calendar-weekdays" aria-hidden="true">
+                  <span>周一</span><span>周二</span><span>周三</span><span>周四</span><span>周五</span><span>周六</span><span>周日</span>
+                </div>
+                <div id="calendar-viewport" class="calendar-viewport">
+                  <div id="calendar-track" class="calendar-track">
+                    <div id="calendar-page-prev" class="calendar-grid calendar-page" role="grid" aria-label="上个月" aria-hidden="true" inert></div>
+                    <div id="calendar-grid" class="calendar-grid calendar-page" role="grid" aria-label="本人月历"></div>
+                    <div id="calendar-page-next" class="calendar-grid calendar-page" role="grid" aria-label="下个月" aria-hidden="true" inert></div>
+                  </div>
+                </div>
+              </div>
+
+              <div id="calendar-detail" class="calendar-detail">
+                <h3 id="calendar-detail-title">选择日期</h3>
+                <div id="calendar-detail-body">
+                  <p class="muted">点击上方日期查看当天节次；只有未来日期可以调整。</p>
+                </div>
+              </div>
+              <p id="calendar-status" class="status" role="status" aria-live="polite"></p>
+            </div>
+          </section>
+
+          <section id="page-collect" class="page" hidden>
+            <div id="collect-denied" class="card" hidden>
+              <h2>无法访问课表收集</h2>
+              <p class="hint">课表收集仅对空间负责人开放。普通成员不能查看收集进度、成员列表、收集日历或邀请码。</p>
+              <div class="actions">
+                <a class="button-link ghost-link back-link" href="#/spaces" aria-label="返回我的空间">返回空间</a>
+              </div>
+            </div>
+            <div id="collect-content" hidden>
+              <div class="card">
+                <div class="app-head">
+                  <div>
+                    <h2>课表收集</h2>
+                    <p id="collect-summary-text" class="hint"></p>
+                  </div>
+                  <div class="actions compact">
+                    <span id="collect-export-range" class="collect-export-range"></span>
+                    <button id="collect-export" type="button" aria-label="导出课程表 Excel 文件">导出课表</button>
+                    <button id="collect-refresh" type="button" class="ghost" aria-label="重新读取收集进度">刷新</button>
+                  </div>
+                </div>
+                <nav id="collect-tabs" class="segmented" role="tablist" aria-label="收集视图">
+                  <button id="collect-tab-overview" type="button" class="segmented-item" role="tab" aria-selected="true" aria-controls="collect-overview">收集概览</button>
+                  <button id="collect-tab-calendar" type="button" class="segmented-item" role="tab" aria-selected="false" aria-controls="collect-calendar">收集日历</button>
+                </nav>
+                <div id="collect-overview" role="tabpanel" aria-labelledby="collect-tab-overview">
+                  <div id="collect-summary" class="status-grid"></div>
+                  <p id="collect-members-loading" class="muted" hidden>正在读取成员…</p>
+                  <div id="collect-members-error" class="inline-error" hidden>
+                    <span id="collect-members-error-text"></span>
+                    <button id="collect-members-retry" type="button" class="ghost" aria-label="重新读取成员与提交状态">重试</button>
+                  </div>
+                  <div id="collect-members-card" class="table-wrap">
+                    <table>
+                      <thead><tr><th scope="col">成员</th><th scope="col">提交状态</th><th scope="col">计入收集</th><th scope="col">日期共享</th><th scope="col">角色</th><th scope="col">加入时间</th></tr></thead>
+                      <tbody id="collect-members-body"></tbody>
+                    </table>
+                  </div>
+                  <p id="collect-members-status" class="status" role="status" aria-live="polite"></p>
+                </div>
+                <div id="collect-calendar" role="tabpanel" aria-labelledby="collect-tab-calendar" hidden>
+                  <div id="collect-calendar-panel">
+                    <div class="calendar-toolbar">
+                      <button id="collect-prev" type="button" class="ghost cal-nav" aria-label="上个月"><span aria-hidden="true">←</span></button>
+                      <strong id="collect-month" class="calendar-month" aria-live="polite"></strong>
+                      <button id="collect-next" type="button" class="ghost cal-nav" aria-label="下个月"><span aria-hidden="true">→</span></button>
+                      <button id="collect-today" type="button" class="ghost">今天</button>
+                    </div>
+                    <p id="collect-term" class="hint"></p>
+                    <ul id="collect-legend" class="legend" aria-label="收集状态图例"></ul>
+                    <p class="legend-note">格内合计按节次累计（人次），同一人可能计入多个节次。</p>
+                    <p id="collect-calendar-loading" class="muted" hidden>正在读取收集日历…</p>
+                    <div id="collect-calendar-error" class="inline-error" hidden>
+                      <span id="collect-calendar-error-text"></span>
+                      <button id="collect-calendar-retry" type="button" class="ghost" aria-label="重新读取收集日历">重试</button>
+                    </div>
+                    <p id="collect-calendar-empty" class="muted" hidden></p>
+                    <div id="collect-calendar-table" class="calendar-table" hidden>
+                      <div class="calendar-weekdays" aria-hidden="true">
+                        <span>周一</span><span>周二</span><span>周三</span><span>周四</span><span>周五</span><span>周六</span><span>周日</span>
+                      </div>
+                      <div id="collect-calendar-viewport" class="calendar-viewport">
+                        <div id="collect-calendar-track" class="calendar-track">
+                          <div id="collect-calendar-page-prev" class="calendar-grid calendar-page" role="grid" aria-label="上个月" aria-hidden="true" inert></div>
+                          <div id="collect-calendar-grid" class="calendar-grid calendar-page" role="grid" aria-label="收集日历"></div>
+                          <div id="collect-calendar-page-next" class="calendar-grid calendar-page" role="grid" aria-label="下个月" aria-hidden="true" inert></div>
+                        </div>
+                      </div>
+                    </div>
+                    <p id="collect-calendar-status" class="status" role="status" aria-live="polite"></p>
+                  </div>
+                  <div id="collect-detail-panel">
+                    <div class="app-head">
+                      <div>
+                        <h3 id="collect-detail-title">选择日期</h3>
+                        <p id="collect-detail-sub" class="hint"></p>
+                      </div>
+                    </div>
+                    <div id="collect-filters" class="segmented" role="group" aria-label="节次主分组筛选">
+                      <button type="button" class="segmented-item" data-filter="all" aria-pressed="true">全部</button>
+                      <button type="button" class="segmented-item" data-filter="class" aria-pressed="false">有课</button>
+                      <button type="button" class="segmented-item" data-filter="busy" aria-pressed="false">忙碌</button>
+                      <button type="button" class="segmented-item" data-filter="free" aria-pressed="false">有空</button>
+                    </div>
+                    <div id="collect-detail-body">
+                      <p class="muted">点击上方日期查看每个节次的人数与名单。</p>
+                    </div>
+                  </div>
+                  <div id="collect-events-panel">
+                    <div class="app-head">
+                      <div>
+                        <h3>空间事件</h3>
+                        <p class="hint">默认仅自己可见；不占成员节次。</p>
+                      </div>
+                      <button id="collect-event-new" type="button">新建事件</button>
+                    </div>
+                    <p id="collect-events-empty" class="muted" hidden>所选日期没有事件。</p>
+                    <div id="collect-events-list" class="event-list"></div>
+                    <p id="collect-events-status" class="status" role="status" aria-live="polite"></p>
+                  </div>
+                </div>
+              </div>
+
+              <div id="collect-invite-card" class="card">
+                <div class="app-head">
+                  <div>
+                    <h2>邀请成员</h2>
+                    <p id="invite-meta" class="hint"></p>
+                  </div>
+                </div>
+                <div class="actions">
+                  <button id="invite-generate" type="button" aria-label="生成邀请码">生成邀请</button>
+                  <button id="invite-rotate" type="button" class="ghost" aria-label="轮换邀请码">更换邀请</button>
+                  <button id="invite-revoke" type="button" class="danger" aria-label="撤销邀请码">撤销邀请</button>
+                </div>
+                <div id="invite-code-box" class="code-box" hidden>
+                  <p class="note">邀请码只显示这一次，请通过可信渠道发送；不要在公开位置张贴。</p>
+                  <code id="invite-code"></code>
+                  <button id="invite-copy" type="button" class="ghost">复制</button>
+                </div>
+                <p id="invite-status" class="status" role="status" aria-live="polite"></p>
+              </div>
+            </div>
+            <div id="collect-legacy" class="card" hidden>
+              <h2>旧版空间</h2>
+              <p class="hint">该空间没有周课表配置，不提供收集进度或邀请码。请使用旧版整表填报。</p>
+              <div class="actions">
+                <button id="collect-open-legacy" type="button" class="ghost">旧版填报</button>
+              </div>
+            </div>
+          </section>
+
+          <section id="page-settings" class="page" hidden>
+            <div id="settings-denied" class="card" hidden>
+              <h2>无权访问空间设置</h2>
+              <p class="hint">空间设置仅对负责人开放。普通成员仍可在“我的课表”和“我的日历”查看教学周摘要与课程安排。</p>
+              <div class="actions">
+                <a id="settings-denied-back" class="button-link ghost-link back-link" href="#/spaces" aria-label="返回空间首页">返回空间</a>
+              </div>
+            </div>
+            <p id="settings-loading" class="muted" hidden>正在读取空间设置…</p>
+            <div id="settings-error" class="inline-error" hidden>
+              <span id="settings-error-text"></span>
+              <button id="settings-retry" type="button" class="ghost" aria-label="重新读取空间设置">重试</button>
+            </div>
+            <div id="settings-content" hidden>
+              <div class="card">
+                <div class="app-head">
+                  <div>
+                    <h2>教学周与学期</h2>
+                  </div>
+                </div>
+                <div id="settings-teaching" class="config-grid"></div>
+                <p id="settings-teaching-note" class="notice-box" role="note" hidden></p>
+                <form id="settings-form" class="form wide" hidden novalidate>
+                  <span id="settings-timezone-label" class="field-label">时区</span>
+                  <div class="picker-field">
+                    <button id="settings-timezone-button" type="button" class="picker-button" aria-haspopup="listbox" aria-expanded="false" aria-labelledby="settings-timezone-label settings-timezone-button">选择时区</button>
+                    <input id="settings-timezone" type="hidden">
+                    <div id="settings-timezone-panel" class="tz-panel" hidden>
+                      <label for="settings-timezone-search">搜索时区</label>
+                      <input id="settings-timezone-search" type="search" autocomplete="off" placeholder="输入 Asia 或 UTC">
+                      <ul id="settings-timezone-list" class="tz-list" role="listbox" aria-label="可选时区"></ul>
+                      <p class="note">推荐 Asia/Shanghai；列表不会自动替你选中。</p>
+                    </div>
+                  </div>
+                  <span id="settings-anchor-label" class="field-label">第一教学周周一</span>
+                  <div class="picker-field">
+                    <button id="settings-anchor-button" type="button" class="picker-button" aria-haspopup="dialog" aria-labelledby="settings-anchor-label settings-anchor-button">选择日期</button>
+                    <input id="settings-anchor" type="hidden">
+                  </div>
+                  <span id="settings-term-start-label" class="field-label">学期开始日期</span>
+                  <div class="picker-field">
+                    <button id="settings-term-start-button" type="button" class="picker-button" aria-haspopup="dialog" aria-labelledby="settings-term-start-label settings-term-start-button">选择日期</button>
+                    <input id="settings-term-start" type="hidden">
+                  </div>
+                  <p class="note">学期开始须在第一教学周（周一至周日）内。</p>
+                  <span id="settings-term-end-label" class="field-label">学期结束日期</span>
+                  <div class="picker-field">
+                    <button id="settings-term-end-button" type="button" class="picker-button" aria-haspopup="dialog" aria-labelledby="settings-term-end-label settings-term-end-button">选择日期</button>
+                    <input id="settings-term-end" type="hidden">
+                  </div>
+                  <p id="settings-preview" class="hint" aria-live="polite"></p>
+                  <p class="note">提交后不可更改。</p>
+                  <div class="actions">
+                    <button id="settings-submit" type="submit" disabled>确认设置</button>
+                  </div>
+                  <p id="settings-status" class="status" role="status" aria-live="polite"></p>
+                </form>
+              </div>
+
+              <div class="card">
+                <h2>空间配置</h2>
+                <div id="settings-config" class="config-grid"></div>
+                <p id="settings-lock-note" class="note" hidden></p>
+              </div>
+
+              <div class="card">
+                <h2>我的参与</h2>
+                <label class="check-line" for="settings-participation-check">
+                  <input id="settings-participation-check" type="checkbox">
+                  <span>将我的课表纳入本空间收集</span>
+                </label>
+                <p id="settings-participation-status" class="hint" aria-live="polite"></p>
+                <div id="settings-participation-choice" class="actions" hidden>
+                  <button id="settings-participation-keep" type="button" class="small">沿用已交</button>
+                  <button id="settings-participation-edit" type="button" class="ghost small">重新提交</button>
+                </div>
+              </div>
+            </div>
+          </section>
+
+          <section id="page-legacy" class="page" hidden>
+            <p id="legacy-loading" class="muted" hidden>正在读取旧版空间…</p>
+            <div id="legacy-error" class="inline-error" hidden>
+              <span id="legacy-error-text"></span>
+              <button id="legacy-retry" type="button" class="ghost" aria-label="重新读取旧版空间数据">重试</button>
+            </div>
+            <div id="legacy-panel" hidden>
+              <div class="card">
+                <h2>旧版空间：共享汇总</h2>
+                <p id="overview-note" class="hint"></p>
+                <div class="table-wrap">
+                  <table>
+                    <thead id="overview-head"></thead>
+                    <tbody id="overview-body"></tbody>
+                  </table>
+                </div>
+                <p id="overview-empty" class="muted" hidden>当前空间没有可显示的记录。</p>
+              </div>
+              <div class="card">
+                <h2>旧版空间：整表提交</h2>
+                <p id="editor-note" class="hint"></p>
+                <p id="version-note" class="muted"></p>
+                <div id="entries-editor" class="entries"></div>
+                <div class="actions">
+                  <button id="submit-schedule" type="button" aria-label="提交整表更新">提交更新</button>
+                </div>
+                <p id="editor-status" class="status" role="status" aria-live="polite"></p>
+              </div>
+            </div>
+            <div id="legacy-mismatch" class="card" hidden>
+              <h2>不是旧版空间</h2>
+              <p class="hint">该空间使用周课表，没有整表填报入口。</p>
+              <div class="actions">
+                <a class="button-link ghost-link back-link" href="#/spaces" aria-label="返回我的空间">返回空间</a>
+              </div>
+            </div>
+          </section>
+
+          <section id="page-notfound" class="page" hidden>
+            <div class="card">
+              <h2>页面不存在</h2>
+              <p class="hint">链接可能已失效，或该地址不属于本应用。你的空间数据没有变化。</p>
+              <div class="actions">
+                <a class="button-link ghost-link back-link" href="#/spaces" aria-label="返回我的空间">返回空间</a>
+              </div>
+            </div>
+          </section>
+
+          <section id="page-error" class="page" hidden>
+            <div class="card">
+              <h2>无法打开该页面</h2>
+              <p id="route-error-text" class="hint"></p>
+              <div class="actions">
+                <button id="route-error-back" type="button" class="back-link" aria-label="返回我的空间">返回空间</button>
+              </div>
+            </div>
+          </section>
+        </div>
+      </div>
+    </section>
+
+    <p id="error" class="error" role="alert" hidden></p>
+  </main>
+
+  <footer class="site-footer">社团协同课表</footer>
+
+  <dialog id="consent-dialog" class="editor-exit-dialog consent-dialog" aria-labelledby="consent-title">
+    <div class="dialog-head">
+      <h2 id="consent-title">隐私与共享</h2>
+      <span id="consent-version" class="chip chip-idle"></span>
+    </div>
+    <p id="consent-hint" class="hint">日期共享可选，默认关闭；“仅必要项”只确认日历告知。</p>
+    <div id="consent-body" class="consent-body"></div>
+    <p id="consent-message" class="inline-error" role="alert" hidden></p>
+    <div class="actions">
+      <a class="ghost small link-button" href="./terms.html?from=consent" target="_blank" rel="noopener">查看条款</a>
+      <button id="consent-necessary" type="button" class="ghost">仅必要项</button>
+      <button id="consent-continue" type="button">全部同意</button>
+    </div>
+  </dialog>
+
+  <dialog id="editor-exit-dialog" class="editor-exit-dialog" aria-labelledby="editor-exit-title">
+    <form method="dialog">
+      <h2 id="editor-exit-title">本格有未保存的修改</h2>
+      <p id="editor-exit-text"></p>
+      <div class="actions">
+        <button id="editor-exit-apply" type="submit" value="apply" aria-label="保存后继续">保存</button>
+        <button id="editor-exit-discard" type="submit" value="discard" class="danger" aria-label="放弃本次编辑">放弃编辑</button>
+        <button id="editor-exit-stay" type="submit" value="stay" class="ghost">留在当前</button>
+      </div>
+    </form>
+  </dialog>
+
+  <dialog id="leave-dialog" class="editor-exit-dialog leave-dialog" aria-labelledby="leave-title">
+    <form method="dialog">
+      <h2 id="leave-title">离开当前页面？</h2>
+      <p id="leave-text"></p>
+      <div class="actions">
+        <button id="leave-save" type="submit" value="save" aria-label="保存草稿后离开">保存离开</button>
+        <button id="leave-discard" type="submit" value="discard" class="danger" aria-label="放弃本地修改并离开">放弃离开</button>
+        <button id="leave-stay" type="submit" value="stay" class="ghost">留在当前</button>
+      </div>
+    </form>
+  </dialog>
+
+  <dialog id="date-picker-dialog" class="editor-exit-dialog date-picker-dialog" aria-labelledby="date-picker-title">
+    <div class="date-picker-body">
+      <div class="app-head">
+        <h2 id="date-picker-title">选择日期</h2>
+        <button id="date-picker-close" type="button" class="dialog-close" aria-label="关闭日期选择">×</button>
+      </div>
+      <p id="date-picker-rule" class="hint"></p>
+      <div class="date-picker-input-row">
+        <label for="date-picker-input">手动输入</label>
+        <input id="date-picker-input" type="text" inputmode="numeric" autocomplete="off" placeholder="YYYY-MM-DD">
+        <button id="date-picker-apply-text" type="button" class="ghost small">识别</button>
+      </div>
+      <div class="date-picker-nav">
+        <button id="date-picker-prev-year" type="button" class="ghost small" aria-label="上一年">上一年</button>
+        <strong id="date-picker-year"></strong>
+        <button id="date-picker-next-year" type="button" class="ghost small" aria-label="下一年">下一年</button>
+      </div>
+      <div id="date-picker-months" class="date-picker-months" role="group" aria-label="月份快选"></div>
+      <div class="calendar-weekdays" aria-hidden="true">
+        <span>周一</span><span>周二</span><span>周三</span><span>周四</span><span>周五</span><span>周六</span><span>周日</span>
+      </div>
+      <div id="date-picker-grid" class="date-picker-grid" role="grid" aria-label="可选日期"></div>
+      <p id="date-picker-status" class="status" role="status" aria-live="polite"></p>
+      <div class="actions">
+        <button id="date-picker-confirm" type="button">确认</button>
+        <button id="date-picker-cancel" type="button" class="ghost">取消</button>
+      </div>
+    </div>
+  </dialog>
+
+  <dialog id="event-dialog" class="editor-exit-dialog event-dialog" aria-labelledby="event-dialog-title">
+    <div class="event-body">
+      <div class="app-head">
+        <h2 id="event-dialog-title">新建事件</h2>
+        <button id="event-close" type="button" class="dialog-close" aria-label="关闭事件编辑">×</button>
+      </div>
+      <p id="event-dialog-rule" class="hint"></p>
+      <label for="event-title">标题</label>
+      <input id="event-title" type="text" maxlength="100" autocomplete="off" placeholder="例如：社团例会">
+      <span id="event-start-label" class="field-label">开始日期</span>
+      <div class="picker-field">
+        <button id="event-start-button" type="button" class="picker-button" aria-haspopup="dialog" aria-labelledby="event-start-label event-start-button">选择日期</button>
+        <input id="event-start" type="hidden">
+      </div>
+      <label class="check-line" for="event-single-day">
+        <input id="event-single-day" type="checkbox" checked>
+        <span>仅一天</span>
+      </label>
+      <span id="event-end-label" class="field-label">结束日期</span>
+      <div class="picker-field" id="event-end-field">
+        <button id="event-end-button" type="button" class="picker-button" aria-haspopup="dialog" aria-labelledby="event-end-label event-end-button">选择日期</button>
+        <input id="event-end" type="hidden">
+      </div>
+      <label class="check-line" for="event-all-day">
+        <input id="event-all-day" type="checkbox" checked>
+        <span>全天事件</span>
+      </label>
+      <div id="event-time-row" class="event-time-row" hidden>
+        <label for="event-start-time">开始</label>
+        <input id="event-start-time" type="text" inputmode="numeric" placeholder="HH:MM" maxlength="5">
+        <label for="event-end-time">结束</label>
+        <input id="event-end-time" type="text" inputmode="numeric" placeholder="HH:MM" maxlength="5">
+      </div>
+      <label for="event-description">说明（可选）</label>
+      <textarea id="event-description" rows="3" maxlength="500" placeholder="简短说明；不要填写敏感信息"></textarea>
+      <fieldset>
+        <legend>可见性</legend>
+        <label class="check-line"><input type="radio" name="event-visibility" value="private" checked><span>仅自己</span></label>
+        <label class="check-line"><input type="radio" name="event-visibility" value="space"><span>全空间</span></label>
+        <label class="check-line"><input type="radio" name="event-visibility" value="invitees"><span>受邀成员</span></label>
+      </fieldset>
+      <p id="event-visibility-note" class="note"></p>
+      <fieldset id="event-recipient-field">
+        <legend>通知接收人</legend>
+        <label class="check-line"><input type="radio" name="event-recipient-scope" value="none" checked><span>不通知</span></label>
+        <label class="check-line"><input type="radio" name="event-recipient-scope" value="all"><span>全体成员（按发送时名单）</span></label>
+        <label class="check-line"><input type="radio" name="event-recipient-scope" value="selected"><span>指定成员</span></label>
+        <div id="event-recipients" class="recipient-list" hidden></div>
+      </fieldset>
+      <p id="event-recipient-note" class="note">通知只在本应用内显示；成员需打开事件并确认后才会占用对应节次。</p>
+      <p id="event-status" class="inline-error" role="alert" hidden></p>
+      <div class="actions">
+        <button id="event-save" type="button">保存事件</button>
+      </div>
+    </div>
+  </dialog>
+
+  <dialog id="arrangement-dialog" class="editor-exit-dialog event-dialog" aria-labelledby="arrangement-title">
+    <div class="event-body">
+      <div class="app-head">
+        <h2 id="arrangement-title">安排成员时间</h2>
+        <button id="arrangement-close" type="button" class="dialog-close" aria-label="关闭安排编辑">×</button>
+      </div>
+      <p id="arrangement-target" class="hint"></p>
+      <p id="arrangement-when" class="note"></p>
+      <fieldset>
+        <legend>安排类型</legend>
+        <label class="check-line"><input type="radio" name="arrangement-kind" value="busy" checked><span>安排忙碌</span></label>
+        <label class="check-line"><input type="radio" name="arrangement-kind" value="available"><span>请求确认有空</span></label>
+      </fieldset>
+      <p class="note">成员本人在“我的日历”确认后才会占用对应节次；不会修改成员周课表或个人日期记录。课程冲突会提示，但不会自动取消课程。</p>
+      <p id="arrangement-status" class="inline-error" role="alert" hidden></p>
+      <div class="actions">
+        <button id="arrangement-send" type="button">发送请求</button>
+      </div>
+    </div>
+  </dialog>
+
+  <dialog id="confirm-dialog" class="editor-exit-dialog confirm-dialog" aria-labelledby="confirm-title">
+    <form method="dialog">
+      <h2 id="confirm-title">请确认</h2>
+      <p id="confirm-text"></p>
+      <div class="actions">
+        <button id="confirm-ok" type="submit" value="ok">确认</button>
+        <button id="confirm-cancel" type="submit" value="cancel" class="ghost">取消</button>
+      </div>
+    </form>
+  </dialog>
+
+  <script type="module" src="./app.js"></script>
+</body>
+</html>

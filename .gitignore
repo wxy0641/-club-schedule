@@ -1,0 +1,29 @@
+# 本地站点描述与平台产物
+*.qoder.site
+.qoder/
+
+# 证据、截图、开发日志与参赛材料
+evidence/
+EVIDENCE.md
+S1_EVIDENCE.md
+S2_EVIDENCE.md
+PRODUCT_JOURNEY.md
+
+# 开发备份与本地测试数据
+dev/*.bak.*
+dev/app.s0.bak.js
+dev/fake-db.s0.bak.mjs
+dev/index.s0.bak.html
+dev/router.s0.bak.mjs
+dev/styles.s0.bak.css
+dev/perf-*.json
+dev/capture-*.mjs
+dev/round12-baseline.mjs
+dev/round12-after.mjs
+dev/round13-baseline.mjs
+dev/set-test-password.ps1
+
+# 依赖与系统文件
+node_modules/
+.DS_Store
+Thumbs.db
